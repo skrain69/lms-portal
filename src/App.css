@@ -7,6 +7,12 @@
   pointer-events: none;
 }
 
+/* src/index.css or src/App.css */
+body {
+  font-family: 'Share Tech Mono', monospace;
+}
+
+
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;

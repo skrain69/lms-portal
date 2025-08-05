@@ -1,8 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
+
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+
+import { applyInitialTheme } from "./utils/theme";
+import './index.css';
+
+applyInitialTheme();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
