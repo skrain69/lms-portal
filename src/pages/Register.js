@@ -4,18 +4,19 @@ import {
   sendEmailVerification,
   updateProfile,
 } from "firebase/auth";
-import { doc, setDoc, collection, query, where, getDocs } from "firebase/firestore";
-import { Link, useNavigate } from "react-router-dom";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
+import { useNavigate, Link } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 
 const Register = () => {
   const [form, setForm] = useState({
     name: "",
     email: "",
+    contact: "",
+    wireSign: "",
     password: "",
     confirmPassword: "",
-    wireSign: "",
-    contact: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -37,37 +38,21 @@ const Register = () => {
 
   const validate = () => {
     const newErrors = {};
-    if (!form.name.trim()) newErrors.name = "Name is required.";
-    if (!form.email.trim()) newErrors.email = "Email is required.";
-
-    if (!form.password) {
-      newErrors.password = "Password is required.";
-    } else if (form.password.length < 8) {
+    if (!form.name) newErrors.name = "Please enter your name.";
+    if (!form.email) newErrors.email = "Please enter your email.";
+    if (!form.contact) newErrors.contact = "Please enter your contact number.";
+    if (!form.wireSign) newErrors.wireSign = "Please enter your wire sign.";
+    else if (form.wireSign.length !== 2)
+      newErrors.wireSign = "Wire sign must be exactly 2 characters.";
+    if (!form.password || form.password.length < 8)
       newErrors.password = "Password must be at least 8 characters.";
-    }
-
-    if (!form.confirmPassword) {
+    if (!form.confirmPassword)
       newErrors.confirmPassword = "Please confirm your password.";
-    } else if (form.password !== form.confirmPassword) {
+    else if (form.password !== form.confirmPassword)
       newErrors.confirmPassword = "Passwords do not match.";
-    }
-
-    if (!form.wireSign.trim() || !/^[A-Za-z]{2}$/.test(form.wireSign)) {
-      newErrors.wireSign = "Wire Sign must be exactly 2 letters.";
-    }
-
-    if ((form.contact.match(/\d/g) || []).length < 11) {
-      newErrors.contact = "Contact number must contain at least 11 digits.";
-    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  const checkEmailExistsInFirestore = async (email) => {
-    const q = query(collection(db, "users"), where("email", "==", email.toLowerCase()));
-    const snapshot = await getDocs(q);
-    return !snapshot.empty;
   };
 
   const handleRegister = async () => {
@@ -75,9 +60,9 @@ const Register = () => {
     if (!validate()) return;
 
     try {
-      const emailExists = await checkEmailExistsInFirestore(form.email);
-      if (emailExists) {
-        setFormMessage("❌ Email is already registered in the system.");
+      const emailCheck = await getDoc(doc(db, "email_index", form.email));
+      if (emailCheck.exists()) {
+        setFormMessage("❌ Email already registered.");
         return;
       }
 
@@ -89,69 +74,63 @@ const Register = () => {
 
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
-        name: form.name.trim(),
-        email: form.email.toLowerCase(),
-        wireSign: form.wireSign.trim().toUpperCase(),
-        contact: form.contact.trim(),
-        photoURL: "",
+        name: form.name,
+        email: form.email,
+        contact: form.contact,
+        wireSign: form.wireSign,
         role: "User",
       });
+
+      await setDoc(doc(db, "email_index", form.email), { uid: user.uid });
 
       setFormMessage("✅ Registration successful! Please verify your email.");
       setTimeout(() => navigate("/login"), 3000);
     } catch (error) {
       let message = "An error occurred. Please try again.";
       if (error.code === "auth/email-already-in-use") {
-        message = "Email is already registered.";
+        message = "Email already registered in Firebase.";
       } else if (error.code === "auth/invalid-email") {
-        message = "Please enter a valid email.";
-      } else if (error.code === "auth/weak-password") {
-        message = "Password is too weak.";
+        message = "Invalid email address.";
       }
       setFormMessage(`❌ ${message}`);
     }
   };
 
   const inputClass = (field) =>
-    `w-full p-2 pr-10 border rounded dark:bg-gray-700 ${
-      errors[field] ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+    `w-full p-2 pr-10 border rounded-md bg-gray-800 text-white placeholder-gray-400 ${
+      errors[field] ? "border-red-500" : "border-gray-600"
     }`;
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded shadow-md w-full max-w-sm text-gray-900 dark:text-white">
-        <h2 className="text-2xl font-bold mb-6 text-center">Register</h2>
+    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800 overflow-hidden">
+      <div className="absolute w-72 h-72 bg-gradient-to-tr from-blue-900 to-indigo-700 rounded-[40%] -left-32 -top-24 opacity-30 z-0 animate-spin-slow"></div>
+      <div className="absolute w-72 h-72 bg-gradient-to-tr from-blue-900 to-indigo-700 rounded-[40%] -right-32 -bottom-24 opacity-30 z-0 animate-spin-slow"></div>
 
-        {/* Name, Email, WireSign, Contact */}
-        {["name", "email", "wireSign", "contact"].map((field) => (
+      <div className="relative z-10 w-full max-w-md bg-gray-900/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-lg px-8 py-10 text-white">
+        <h2 className="text-2xl font-bold text-center mb-6">Register</h2>
+
+        {Object.entries({ name: "Name", email: "Email", contact: "Contact", wireSign: "Wire Sign" }).map(([field, label]) => (
           <div className="mb-4" key={field}>
+            <label className="block text-sm mb-1">{label}</label>
             <input
               type={field === "email" ? "email" : "text"}
               name={field}
-              placeholder={
-                field === "wireSign"
-                  ? "Wire Sign (e.g. AB)"
-                  : field === "contact"
-                  ? "Contact Number"
-                  : field.charAt(0).toUpperCase() + field.slice(1)
-              }
+              placeholder={`Enter your ${label}`}
               className={inputClass(field)}
               value={form[field]}
               onChange={handleChange}
             />
-            {errors[field] && (
-              <p className="text-red-600 text-sm mt-1">{errors[field]}</p>
-            )}
+            {errors[field] && <p className="text-red-600 text-sm mt-1">{errors[field]}</p>}
           </div>
         ))}
 
-        {/* Password + Confirm Password */}
-        {["password", "confirmPassword"].map((field) => (
+        {Object.entries({ password: "Password", confirmPassword: "Confirm Password" }).map(([field, label]) => (
           <div className="mb-4 relative" key={field}>
+            <label className="block text-sm mb-1">{label}</label>
             <input
               type={showPassword[field] ? "text" : "password"}
               name={field}
-              placeholder={field === "confirmPassword" ? "Confirm Password" : "Password"}
+              placeholder={label}
               className={inputClass(field)}
               value={form[field]}
               onChange={handleChange}
@@ -159,38 +138,34 @@ const Register = () => {
             <button
               type="button"
               onClick={() => togglePasswordVisibility(field)}
-              className="absolute top-1/2 right-3 transform -translate-y-1/2 text-sm text-blue-500 hover:underline focus:outline-none"
+              className="absolute top-8 right-3 text-gray-400"
+              aria-label="Toggle Password Visibility"
             >
-              {showPassword[field] ? "Hide" : "Show"}
+              {showPassword[field] ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
-            {errors[field] && (
-              <p className="text-red-600 text-sm mt-1">{errors[field]}</p>
-            )}
+            {errors[field] && <p className="text-red-600 text-sm mt-1">{errors[field]}</p>}
           </div>
         ))}
 
         <button
           onClick={handleRegister}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded mb-4"
+          className="w-full bg-blue-700 hover:bg-blue-800 text-white py-2 rounded-md mb-4 text-sm font-medium transition"
         >
           Register
         </button>
 
         {formMessage && (
-          <p
-            className={`text-sm text-center mb-4 ${
-              formMessage.startsWith("✅") ? "text-green-600" : "text-red-600"
-            }`}
-          >
+          <p className={`text-sm text-center mb-4 ${formMessage.startsWith("✅") ? "text-green-500" : "text-red-500"}`}>
             {formMessage}
           </p>
         )}
 
-        <div className="flex justify-center text-sm">
-          <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:underline">
-            Already have an account? Login
+        <p className="text-sm text-center mt-3">
+          Already have an account? {" "}
+          <Link to="/login" className="text-blue-400 hover:underline">
+            Login
           </Link>
-        </div>
+        </p>
       </div>
     </div>
   );
