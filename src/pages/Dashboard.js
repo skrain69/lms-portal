@@ -2,11 +2,13 @@
 import { useEffect, useState } from "react";
 import { auth, db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
+import { useLocation } from "react-router-dom";
+
 import Layout from "../components/Layout";
 import TrafficChart from "../components/TrafficChart";
 import Settings from "./Settings";
-import Directory from "./Directory"; // ✅ Import Directory
-import { useLocation } from "react-router-dom";
+import Directory from "./Directory";
 
 const Dashboard = () => {
   const [userData, setUserData] = useState(null);
@@ -17,14 +19,23 @@ const Dashboard = () => {
   const showDirectory = query.get("directory") === "true";
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const currentUser = auth.currentUser;
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
-        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-        if (userDoc.exists()) setUserData(userDoc.data());
+        try {
+          const userRef = doc(db, "users", currentUser.uid);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            setUserData({ uid: currentUser.uid, ...userSnap.data() });
+          }
+        } catch (err) {
+          console.error("Error fetching user profile:", err);
+        }
+      } else {
+        setUserData(null); // ✅ Clear state on logout
       }
-    };
-    fetchUser();
+    });
+
+    return () => unsubscribe();
   }, []);
 
   return (
@@ -32,7 +43,7 @@ const Dashboard = () => {
       {!showSettings && !showDirectory && (
         <p className="text-gray-600 dark:text-gray-300 mb-6">
           {userData
-            ? `Welcome back, ${userData.name || userData.role}.`
+            ? `Welcome back, ${userData.name || userData.wireSign || "User"}.`
             : "Here's what's happening today."}
         </p>
       )}

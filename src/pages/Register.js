@@ -4,133 +4,170 @@ import {
   sendEmailVerification,
   updateProfile,
 } from "firebase/auth";
-import { auth, db } from "../firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { Link, useNavigate } from "react-router-dom";
+import { auth, db } from "../firebase";
 
 const Register = () => {
-  const [name, setName] = useState(""); // New
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    wireSign: "",
+    contact: "",
+  });
+
   const [errors, setErrors] = useState({});
   const [formMessage, setFormMessage] = useState("");
+  const [showPassword, setShowPassword] = useState({
+    password: false,
+    confirmPassword: false,
+  });
 
   const navigate = useNavigate();
 
-  const handleRegister = async () => {
-    const newErrors = {};
-    setFormMessage("");
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
-    if (!name) newErrors.name = "Please enter your name.";
-    if (!email) newErrors.email = "Please enter your email.";
-    if (!password) {
-      newErrors.password = "Please enter your password.";
-    } else if (password.length < 8) {
+  const togglePasswordVisibility = (field) => {
+    setShowPassword((prev) => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const validate = () => {
+    const newErrors = {};
+    if (!form.name.trim()) newErrors.name = "Name is required.";
+    if (!form.email.trim()) newErrors.email = "Email is required.";
+
+    if (!form.password) {
+      newErrors.password = "Password is required.";
+    } else if (form.password.length < 8) {
       newErrors.password = "Password must be at least 8 characters.";
     }
 
-    if (!confirmPassword) {
+    if (!form.confirmPassword) {
       newErrors.confirmPassword = "Please confirm your password.";
-    } else if (password !== confirmPassword) {
+    } else if (form.password !== form.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match.";
     }
 
+    if (!form.wireSign.trim() || !/^[A-Za-z]{2}$/.test(form.wireSign)) {
+      newErrors.wireSign = "Wire Sign must be exactly 2 letters.";
+    }
+
+    if ((form.contact.match(/\d/g) || []).length < 11) {
+      newErrors.contact = "Contact number must contain at least 11 digits.";
+    }
+
     setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) return;
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const checkEmailExistsInFirestore = async (email) => {
+    const q = query(collection(db, "users"), where("email", "==", email.toLowerCase()));
+    const snapshot = await getDocs(q);
+    return !snapshot.empty;
+  };
+
+  const handleRegister = async () => {
+    setFormMessage("");
+    if (!validate()) return;
 
     try {
-      const res = await createUserWithEmailAndPassword(auth, email, password);
+      const emailExists = await checkEmailExistsInFirestore(form.email);
+      if (emailExists) {
+        setFormMessage("❌ Email is already registered in the system.");
+        return;
+      }
+
+      const res = await createUserWithEmailAndPassword(auth, form.email, form.password);
       const user = res.user;
 
-      await updateProfile(user, { displayName: name });
+      await updateProfile(user, { displayName: form.name });
       await sendEmailVerification(user);
 
-      // Create user document in Firestore
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
-        name,
-        email,
-        role: "User", // 👈 Default role
+        name: form.name.trim(),
+        email: form.email.toLowerCase(),
+        wireSign: form.wireSign.trim().toUpperCase(),
+        contact: form.contact.trim(),
+        photoURL: "",
+        role: "User",
       });
 
       setFormMessage("✅ Registration successful! Please verify your email.");
       setTimeout(() => navigate("/login"), 3000);
     } catch (error) {
-      let friendlyMessage = "An error occurred. Please try again.";
+      let message = "An error occurred. Please try again.";
       if (error.code === "auth/email-already-in-use") {
-        friendlyMessage = "Email is already registered.";
+        message = "Email is already registered.";
       } else if (error.code === "auth/invalid-email") {
-        friendlyMessage = "Please enter a valid email.";
+        message = "Please enter a valid email.";
+      } else if (error.code === "auth/weak-password") {
+        message = "Password is too weak.";
       }
-      setFormMessage(`❌ ${friendlyMessage}`);
+      setFormMessage(`❌ ${message}`);
     }
   };
+
+  const inputClass = (field) =>
+    `w-full p-2 pr-10 border rounded dark:bg-gray-700 ${
+      errors[field] ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+    }`;
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900">
       <div className="bg-white dark:bg-gray-800 p-6 rounded shadow-md w-full max-w-sm text-gray-900 dark:text-white">
         <h2 className="text-2xl font-bold mb-6 text-center">Register</h2>
 
-        {/* Name Field */}
-        <div className="mb-4">
-          <input
-            type="text"
-            placeholder="Full Name"
-            className={`w-full p-2 border rounded dark:bg-gray-700 ${
-              errors.name ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-            }`}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          {errors.name && <p className="text-red-600 text-sm mt-1">{errors.name}</p>}
-        </div>
+        {/* Name, Email, WireSign, Contact */}
+        {["name", "email", "wireSign", "contact"].map((field) => (
+          <div className="mb-4" key={field}>
+            <input
+              type={field === "email" ? "email" : "text"}
+              name={field}
+              placeholder={
+                field === "wireSign"
+                  ? "Wire Sign (e.g. AB)"
+                  : field === "contact"
+                  ? "Contact Number"
+                  : field.charAt(0).toUpperCase() + field.slice(1)
+              }
+              className={inputClass(field)}
+              value={form[field]}
+              onChange={handleChange}
+            />
+            {errors[field] && (
+              <p className="text-red-600 text-sm mt-1">{errors[field]}</p>
+            )}
+          </div>
+        ))}
 
-        {/* Email */}
-        <div className="mb-4">
-          <input
-            type="email"
-            placeholder="Email"
-            className={`w-full p-2 border rounded dark:bg-gray-700 ${
-              errors.email ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-            }`}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
-        </div>
-
-        {/* Password */}
-        <div className="mb-4">
-          <input
-            type="password"
-            placeholder="Password"
-            className={`w-full p-2 border rounded dark:bg-gray-700 ${
-              errors.password ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-            }`}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          {errors.password && (
-            <p className="text-red-600 text-sm mt-1">{errors.password}</p>
-          )}
-        </div>
-
-        {/* Confirm Password */}
-        <div className="mb-4">
-          <input
-            type="password"
-            placeholder="Confirm Password"
-            className={`w-full p-2 border rounded dark:bg-gray-700 ${
-              errors.confirmPassword ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-            }`}
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-          />
-          {errors.confirmPassword && (
-            <p className="text-red-600 text-sm mt-1">{errors.confirmPassword}</p>
-          )}
-        </div>
+        {/* Password + Confirm Password */}
+        {["password", "confirmPassword"].map((field) => (
+          <div className="mb-4 relative" key={field}>
+            <input
+              type={showPassword[field] ? "text" : "password"}
+              name={field}
+              placeholder={field === "confirmPassword" ? "Confirm Password" : "Password"}
+              className={inputClass(field)}
+              value={form[field]}
+              onChange={handleChange}
+            />
+            <button
+              type="button"
+              onClick={() => togglePasswordVisibility(field)}
+              className="absolute top-1/2 right-3 transform -translate-y-1/2 text-sm text-blue-500 hover:underline focus:outline-none"
+            >
+              {showPassword[field] ? "Hide" : "Show"}
+            </button>
+            {errors[field] && (
+              <p className="text-red-600 text-sm mt-1">{errors[field]}</p>
+            )}
+          </div>
+        ))}
 
         <button
           onClick={handleRegister}
@@ -142,9 +179,7 @@ const Register = () => {
         {formMessage && (
           <p
             className={`text-sm text-center mb-4 ${
-              formMessage.startsWith("✅")
-                ? "text-green-600"
-                : "text-red-600"
+              formMessage.startsWith("✅") ? "text-green-600" : "text-red-600"
             }`}
           >
             {formMessage}

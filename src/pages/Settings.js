@@ -3,10 +3,12 @@ import { useAuth } from "../contexts/AuthContext";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
+// Notification Banner
 const InlineNotif = ({ notif, onClose }) => {
   if (!notif.visible) return null;
 
-  const base = "mb-4 p-3 rounded text-sm flex items-start justify-between gap-3 transition-all";
+  const base =
+    "mb-4 p-3 rounded text-sm flex items-start justify-between gap-3 transition-all";
   const style =
     notif.type === "success"
       ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
@@ -29,36 +31,49 @@ const InlineNotif = ({ notif, onClose }) => {
 const Settings = () => {
   const { currentUser, refreshUserData } = useAuth();
 
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    role: "",
+    wireSign: "",
+    contact: "",
+    photoURL: "",
+  });
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState("");
-  const [wireSign, setWireSign] = useState("");
-  const [contact, setContact] = useState("");
-  const [photoURL, setPhotoURL] = useState("");
-
-  const [notif, setNotif] = useState({ visible: false, type: "success", message: "" });
+  const [notif, setNotif] = useState({
+    visible: false,
+    type: "success",
+    message: "",
+  });
 
   useEffect(() => {
     const fetchUserData = async () => {
       if (!currentUser) return;
+
       setLoading(true);
       try {
         const ref = doc(db, "users", currentUser.uid);
         const snap = await getDoc(ref);
+
         if (snap.exists()) {
           const data = snap.data();
-          setName(data.name || "");
-          setEmail(data.email || currentUser.email || "");
-          setRole(data.role || "");
-          setWireSign(data.wireSign || "");
-          setContact(data.contact || "");
-          setPhotoURL(data.photoURL || "");
+          setForm({
+            name: data.name || "",
+            email: data.email || currentUser.email || "",
+            role: data.role || "",
+            wireSign: data.wireSign || "",
+            contact: data.contact || "",
+            photoURL: data.photoURL || "",
+          });
         }
       } catch {
-        setNotif({ visible: true, type: "error", message: "Failed to load settings." });
+        setNotif({
+          visible: true,
+          type: "error",
+          message: "Failed to load settings.",
+        });
       } finally {
         setLoading(false);
       }
@@ -73,20 +88,38 @@ const Settings = () => {
     return () => clearTimeout(timer);
   }, [notif.visible]);
 
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     if (!currentUser) return;
 
+    const { name, wireSign, contact, photoURL } = form;
+
     if (!name.trim() || !wireSign.trim() || !contact.trim()) {
-      return setNotif({ visible: true, type: "error", message: "Please complete all required fields." });
+      return setNotif({
+        visible: true,
+        type: "error",
+        message: "Please complete all required fields.",
+      });
     }
 
     if (!/^[A-Za-z]{2}$/.test(wireSign.trim())) {
-      return setNotif({ visible: true, type: "error", message: "Wire Sign must be exactly 2 letters." });
+      return setNotif({
+        visible: true,
+        type: "error",
+        message: "Wire Sign must be exactly 2 letters.",
+      });
     }
 
     if ((contact.match(/\d/g) || []).length < 11) {
-      return setNotif({ visible: true, type: "error", message: "Contact must contain at least 11 digits." });
+      return setNotif({
+        visible: true,
+        type: "error",
+        message: "Contact must contain at least 11 digits.",
+      });
     }
 
     setSaving(true);
@@ -96,21 +129,26 @@ const Settings = () => {
         name: name.trim(),
         wireSign: wireSign.trim().toUpperCase(),
         contact: contact.trim(),
-        photoURL: photoURL.trim()
+        photoURL: photoURL.trim(),
       });
 
-      if (typeof refreshUserData === "function") refreshUserData();
+      if (typeof refreshUserData === "function") {
+        await refreshUserData(); // ✅ Refresh auth context
+      }
 
-      setNotif({ visible: true, type: "success", message: "Settings updated successfully." });
+      setNotif({
+        visible: true,
+        type: "success",
+        message: "Settings updated successfully.",
+      });
 
-      // ✅ Clear input fields after successful save
-      setName("");
-      setWireSign("");
-      setContact("");
-      setPhotoURL("");
-
+      setTimeout(() => window.location.reload(), 1000); // ✅ Update Navbar/avatar/etc
     } catch {
-      setNotif({ visible: true, type: "error", message: "Save failed. Try again." });
+      setNotif({
+        visible: true,
+        type: "error",
+        message: "Save failed. Try again.",
+      });
     } finally {
       setSaving(false);
     }
@@ -121,58 +159,50 @@ const Settings = () => {
       {loading ? (
         <p className="text-gray-500 dark:text-gray-400">Loading...</p>
       ) : (
-        <form onSubmit={handleSave} className="bg-white dark:bg-gray-800 p-6 rounded shadow-sm">
+        <form
+          onSubmit={handleSave}
+          className="bg-white dark:bg-gray-800 p-6 rounded shadow-sm"
+        >
           <h1 className="text-xl font-semibold mb-6">User Settings</h1>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="w-full p-2 border rounded bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-            />
-          </div>
+          {/* Editable fields */}
+          {[
+            { label: "Name", name: "name", type: "text", required: true },
+            {
+              label: "Wire Sign",
+              name: "wireSign",
+              type: "text",
+              required: true,
+              maxLength: 2,
+            },
+            {
+              label: "Contact Number",
+              name: "contact",
+              type: "tel",
+              required: true,
+            },
+            { label: "Photo URL", name: "photoURL", type: "url" },
+          ].map(({ label, name, type, required, maxLength }) => (
+            <div className="mb-4" key={name}>
+              <label className="block text-sm font-medium mb-1">{label}</label>
+              <input
+                type={type}
+                name={name}
+                value={form[name]}
+                onChange={handleChange}
+                required={required}
+                maxLength={maxLength}
+                className="w-full p-2 border rounded bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+              />
+            </div>
+          ))}
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Wire Sign</label>
-            <input
-              type="text"
-              value={wireSign}
-              onChange={(e) => setWireSign(e.target.value.toUpperCase())}
-              maxLength={2}
-              required
-              className="w-full p-2 border rounded bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Contact Number</label>
-            <input
-              type="tel"
-              value={contact}
-              onChange={(e) => setContact(e.target.value)}
-              required
-              className="w-full p-2 border rounded bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Photo URL</label>
-            <input
-              type="url"
-              value={photoURL}
-              onChange={(e) => setPhotoURL(e.target.value)}
-              className="w-full p-2 border rounded bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-            />
-          </div>
-
+          {/* Read-only fields */}
           <div className="mb-4">
             <label className="block text-sm font-medium mb-1">Email (read-only)</label>
             <input
               type="email"
-              value={email}
+              value={form.email}
               disabled
               className="w-full p-2 border rounded bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400"
             />
@@ -182,12 +212,13 @@ const Settings = () => {
             <label className="block text-sm font-medium mb-1">Role (read-only)</label>
             <input
               type="text"
-              value={role}
+              value={form.role}
               disabled
               className="w-full p-2 border rounded bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400"
             />
           </div>
 
+          {/* Submit Button */}
           <div className="flex gap-3">
             <button
               type="submit"
@@ -198,8 +229,12 @@ const Settings = () => {
             </button>
           </div>
 
+          {/* Notification */}
           <div className="mt-4">
-            <InlineNotif notif={notif} onClose={() => setNotif(n => ({ ...n, visible: false }))} />
+            <InlineNotif
+              notif={notif}
+              onClose={() => setNotif((n) => ({ ...n, visible: false }))}
+            />
           </div>
         </form>
       )}

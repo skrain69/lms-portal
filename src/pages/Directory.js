@@ -55,12 +55,10 @@ const Directory = () => {
   }, [searchTerm, sortKey, sortOrder]);
 
   const filteredUsers = users
-    .filter((user) =>
-      Object.values(user)
-        .join(" ")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase())
-    )
+  .filter((user) =>
+    user.wireSign.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
     .sort((a, b) => {
       const valA = a[sortKey].toLowerCase();
       const valB = b[sortKey].toLowerCase();
@@ -90,7 +88,7 @@ const Directory = () => {
 
       <input
         type="text"
-        placeholder="Search by name, wire sign, email..."
+        placeholder="Search Wire Sign . . ."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         className="mb-6 px-3 py-2 w-full max-w-md border rounded bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"

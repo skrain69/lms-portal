@@ -7,35 +7,38 @@ import { doc, getDoc } from "firebase/firestore";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const refreshUserData = async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      setUserData(null);
+      return;
+    }
+
+    const userRef = doc(db, "users", currentUser.uid);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists()) {
+      setUserData({ uid: currentUser.uid, ...userSnap.data() });
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
       if (user) {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          setUserData(userDoc.data());
-        }
+        await refreshUserData();
       } else {
         setUserData(null);
       }
       setLoading(false);
     });
 
-    return unsubscribe;
+    return () => unsubscribe();
   }, []);
 
-  const value = {
-    currentUser,
-    userData,
-    photoURL: userData?.photoURL || currentUser?.photoURL || null,
-  };
-
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ currentUser: auth.currentUser, userData, refreshUserData }}>
       {!loading && children}
     </AuthContext.Provider>
   );

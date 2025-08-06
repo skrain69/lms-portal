@@ -1,27 +1,33 @@
-import { useAuth } from "../contexts/AuthContext";
-import { useTheme } from "../contexts/ThemeContext";
-import { Moon, Sun, Maximize2, Minimize2, Search } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { useTheme } from "../contexts/ThemeContext";
+import {
+  Moon,
+  Sun,
+  Maximize2,
+  Minimize2,
+  Search,
+} from "lucide-react";
 
 const Navbar = () => {
   const { userData, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
+  const [search, setSearch] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const dropdownRef = useRef();
+
   const name = userData?.name || "User";
   const photoURL = userData?.photoURL || null;
 
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-
-  const dropdownRef = useRef();
-
+  // Toggle fullscreen mode
   const toggleFullscreen = () => {
-    const docElm = document.documentElement;
+    const docEl = document.documentElement;
     if (!document.fullscreenElement) {
-      docElm.requestFullscreen?.();
+      docEl.requestFullscreen?.();
       setIsFullscreen(true);
     } else {
       document.exitFullscreen?.();
@@ -29,6 +35,7 @@ const Navbar = () => {
     }
   };
 
+  // Logout: reset everything and reload
   const handleLogout = async () => {
     try {
       await logout?.();
@@ -41,15 +48,16 @@ const Navbar = () => {
     }
   };
 
+  // Listen for fullscreen change
   useEffect(() => {
-    const onExit = () => {
+    const handleFullscreenExit = () => {
       if (!document.fullscreenElement) setIsFullscreen(false);
     };
-    document.addEventListener("fullscreenchange", onExit);
-    return () => document.removeEventListener("fullscreenchange", onExit);
+    document.addEventListener("fullscreenchange", handleFullscreenExit);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenExit);
   }, []);
 
-  // Close dropdown when clicking outside
+  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -63,6 +71,7 @@ const Navbar = () => {
   return (
     <nav className="w-full flex justify-center mt-4 px-4 z-30 relative">
       <div className="w-full max-w-6xl flex items-center justify-between gap-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-6 py-3 shadow-sm">
+        
         {/* Search */}
         <div className="flex-1 max-w-md">
           <label className="relative block">
@@ -79,8 +88,9 @@ const Navbar = () => {
           </label>
         </div>
 
-        {/* Actions */}
+        {/* Theme, Fullscreen, Avatar Menu */}
         <div className="flex items-center gap-4 relative" ref={dropdownRef}>
+          {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
             aria-label="Toggle Theme"
@@ -93,6 +103,7 @@ const Navbar = () => {
             )}
           </button>
 
+          {/* Fullscreen Toggle */}
           <button
             onClick={toggleFullscreen}
             aria-label="Toggle Fullscreen"
@@ -105,7 +116,7 @@ const Navbar = () => {
             )}
           </button>
 
-          {/* Avatar & Dropdown */}
+          {/* Avatar + Dropdown */}
           <div className="relative">
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
