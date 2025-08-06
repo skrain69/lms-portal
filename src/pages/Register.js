@@ -66,7 +66,11 @@ const Register = () => {
         return;
       }
 
-      const res = await createUserWithEmailAndPassword(auth, form.email, form.password);
+      const res = await createUserWithEmailAndPassword(
+        auth,
+        form.email,
+        form.password
+      );
       const user = res.user;
 
       await updateProfile(user, { displayName: form.name });
@@ -97,19 +101,27 @@ const Register = () => {
   };
 
   const inputClass = (field) =>
-    `w-full p-2 pr-10 border rounded-md bg-gray-800 text-white placeholder-gray-400 ${
+    `w-full p-2 pr-10 border rounded-md bg-gray-900 text-white placeholder-gray-400 ${
       errors[field] ? "border-red-500" : "border-gray-600"
-    }`;
+    } focus:outline-none focus:ring-2 focus:ring-blue-500`;
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800 overflow-hidden">
+      {/* Animated Background Blobs */}
       <div className="absolute w-72 h-72 bg-gradient-to-tr from-blue-900 to-indigo-700 rounded-[40%] -left-32 -top-24 opacity-30 z-0 animate-spin-slow"></div>
       <div className="absolute w-72 h-72 bg-gradient-to-tr from-blue-900 to-indigo-700 rounded-[40%] -right-32 -bottom-24 opacity-30 z-0 animate-spin-slow"></div>
 
+      {/* Form Card */}
       <div className="relative z-10 w-full max-w-md bg-gray-900/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-lg px-8 py-10 text-white">
         <h2 className="text-2xl font-bold text-center mb-6">Register</h2>
 
-        {Object.entries({ name: "Name", email: "Email", contact: "Contact", wireSign: "Wire Sign" }).map(([field, label]) => (
+        {/* Text Fields */}
+        {Object.entries({
+          name: "Name",
+          email: "Email",
+          contact: "Contact",
+          wireSign: "Wire Sign",
+        }).map(([field, label]) => (
           <div className="mb-4" key={field}>
             <label className="block text-sm mb-1">{label}</label>
             <input
@@ -120,11 +132,17 @@ const Register = () => {
               value={form[field]}
               onChange={handleChange}
             />
-            {errors[field] && <p className="text-red-600 text-sm mt-1">{errors[field]}</p>}
+            {errors[field] && (
+              <p className="text-red-500 text-sm mt-1">{errors[field]}</p>
+            )}
           </div>
         ))}
 
-        {Object.entries({ password: "Password", confirmPassword: "Confirm Password" }).map(([field, label]) => (
+        {/* Password Fields */}
+        {Object.entries({
+          password: "Password",
+          confirmPassword: "Confirm Password",
+        }).map(([field, label]) => (
           <div className="mb-4 relative" key={field}>
             <label className="block text-sm mb-1">{label}</label>
             <input
@@ -143,10 +161,13 @@ const Register = () => {
             >
               {showPassword[field] ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
-            {errors[field] && <p className="text-red-600 text-sm mt-1">{errors[field]}</p>}
+            {errors[field] && (
+              <p className="text-red-500 text-sm mt-1">{errors[field]}</p>
+            )}
           </div>
         ))}
 
+        {/* Submit Button */}
         <button
           onClick={handleRegister}
           className="w-full bg-blue-700 hover:bg-blue-800 text-white py-2 rounded-md mb-4 text-sm font-medium transition"
@@ -154,14 +175,20 @@ const Register = () => {
           Register
         </button>
 
+        {/* Status Message */}
         {formMessage && (
-          <p className={`text-sm text-center mb-4 ${formMessage.startsWith("✅") ? "text-green-500" : "text-red-500"}`}>
+          <p
+            className={`text-sm text-center mb-4 ${
+              formMessage.startsWith("✅") ? "text-green-500" : "text-red-500"
+            }`}
+          >
             {formMessage}
           </p>
         )}
 
+        {/* Navigation Link */}
         <p className="text-sm text-center mt-3">
-          Already have an account? {" "}
+          Already have an account?{" "}
           <Link to="/login" className="text-blue-400 hover:underline">
             Login
           </Link>
