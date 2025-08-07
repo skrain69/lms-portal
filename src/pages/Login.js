@@ -1,3 +1,4 @@
+// ✅ src/pages/Login.js
 import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { getDoc, doc } from "firebase/firestore";
@@ -11,6 +12,7 @@ const Login = () => {
   const [formMessage, setFormMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
   const navigate = useNavigate();
   const { refreshUserData } = useAuth();
 
@@ -35,27 +37,31 @@ const Login = () => {
       const res = await signInWithEmailAndPassword(auth, form.email, form.password);
       const user = res.user;
 
+      // Check Firestore user
       const docSnap = await getDoc(doc(db, "users", user.uid));
       if (!docSnap.exists()) {
         await auth.signOut();
-        setFormMessage("❌ Access denied. Account not found.");
+        setFormMessage("❌ Access denied. User not found in database.");
         setLoading(false);
         return;
       }
 
+      // Email not verified
       if (!user.emailVerified) {
         setFormMessage("⚠️ Please verify your email before logging in.");
         setLoading(false);
         return;
       }
 
+      // All good — refresh user context
       await refreshUserData();
-      navigate("/");
+      navigate("/", { replace: true });
     } catch (error) {
       let msg = "Login failed. Please try again.";
-      if (error.code === "auth/user-not-found") msg = "No account found.";
-      if (error.code === "auth/wrong-password") msg = "Incorrect password.";
-      setFormMessage(`❌ ${msg}`);
+      if (error.code === "auth/user-not-found") msg = "❌ No user found with this email.";
+      else if (error.code === "auth/wrong-password") msg = "❌ Incorrect password.";
+      else if (error.code === "auth/too-many-requests") msg = "❌ Too many login attempts. Try again later.";
+      setFormMessage(msg);
     } finally {
       setLoading(false);
     }
@@ -106,6 +112,7 @@ const Login = () => {
           </button>
         </div>
 
+        {/* Login Button */}
         <div className="flex justify-between items-center mb-3">
           <button
             onClick={handleLogin}
@@ -120,12 +127,14 @@ const Login = () => {
           </Link>
         </div>
 
+        {/* Error Message */}
         {formMessage && (
           <p className="text-sm text-center mb-4 text-red-500">
             {formMessage}
           </p>
         )}
 
+        {/* Google Sign-In Placeholder */}
         <div className="flex items-center my-5 text-sm text-gray-400">
           <div className="flex-grow border-t border-gray-700"></div>
           <span className="mx-3">Or login with</span>
@@ -141,7 +150,7 @@ const Login = () => {
         </button>
 
         <p className="text-sm text-center mt-5">
-          Don’t have an account? {" "}
+          Don’t have an account?{" "}
           <Link to="/register" className="text-blue-400 hover:underline">
             Create new
           </Link>

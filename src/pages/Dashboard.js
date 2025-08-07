@@ -38,9 +38,9 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div className="p-4 sm:p-6 md:p-8 max-w-screen-lg mx-auto w-full">
+      <div className="p-4 sm:p-6 md:p-8 lg:p-10">
         {!showSettings && !showDirectory && (
-          <p className="text-gray-700 dark:text-gray-300 text-base sm:text-lg md:text-xl mb-6 sm:mb-8">
+          <p className="text-gray-700 dark:text-gray-300 text-base sm:text-lg md:text-xl mb-4 sm:mb-6">
             {userData
               ? `Welcome back, ${userData.name || userData.wireSign || "User"}.`
               : "Here's what's happening today."}

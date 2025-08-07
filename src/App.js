@@ -15,10 +15,10 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const App = () => {
-  // Ensure auth re-check on back-forward cache restore
+  // Prevent back navigation after logout (BFCache)
   useEffect(() => {
     const onPageShow = (e) => {
-      if (e.persisted) {
+      if (e.persisted || performance.getEntriesByType("navigation")[0]?.type === "back_forward") {
         window.location.reload();
       }
     };
@@ -31,12 +31,12 @@ const App = () => {
       <AuthProvider>
         <Router>
           <Routes>
-            {/* Public routes */}
+            {/* Public Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
 
-            {/* Protected routes (wrapped by Layout inside Dashboard) */}
+            {/* Protected Routes */}
             <Route
               path="/"
               element={
@@ -45,7 +45,6 @@ const App = () => {
                 </PrivateRoute>
               }
             />
-
             <Route
               path="/profile"
               element={
@@ -55,7 +54,7 @@ const App = () => {
               }
             />
 
-            {/* Fallback route */}
+            {/* Fallback */}
             <Route path="/404" element={<NotFound />} />
             <Route path="*" element={<Navigate to="/404" replace />} />
           </Routes>

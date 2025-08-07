@@ -1,45 +1,50 @@
 // src/contexts/AuthContext.js
 import { createContext, useContext, useEffect, useState } from "react";
 import { auth, db } from "../firebase";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+  const [currentUser, setCurrentUser] = useState(null);
   const [userData, setUserData] = useState(null);
-  const [loading, setLoading] = useState(true);
 
+  // Refresh Firestore user data
   const refreshUserData = async () => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
-      setUserData(null);
-      return;
-    }
-
-    const userRef = doc(db, "users", currentUser.uid);
-    const userSnap = await getDoc(userRef);
-    if (userSnap.exists()) {
-      setUserData({ uid: currentUser.uid, ...userSnap.data() });
+    const user = auth.currentUser;
+    if (user) {
+      const snap = await getDoc(doc(db, "users", user.uid));
+      if (snap.exists()) {
+        setUserData(snap.data());
+      }
     }
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user);
       if (user) {
         await refreshUserData();
       } else {
         setUserData(null);
       }
-      setLoading(false);
     });
-
-    return () => unsubscribe();
+    return () => unsub();
   }, []);
 
+  const logout = () => signOut(auth);
+
   return (
-    <AuthContext.Provider value={{ currentUser: auth.currentUser, userData, refreshUserData }}>
-      {!loading && children}
+    <AuthContext.Provider
+      value={{
+        currentUser,
+        userData,
+        logout,
+        refreshUserData, // ← expose this
+      }}
+    >
+      {children}
     </AuthContext.Provider>
   );
 };

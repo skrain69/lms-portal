@@ -1,25 +1,12 @@
-// src/components/Layout.js
-import { useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
-import Navbar from "./Navbar";
 
 const Layout = ({ children }) => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    return JSON.parse(localStorage.getItem("sidebar-collapsed")) || false;
-  });
-
-  // Persist collapse state
-  useEffect(() => {
-    localStorage.setItem("sidebar-collapsed", JSON.stringify(sidebarCollapsed));
-  }, [sidebarCollapsed]);
-
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
-      <Sidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
-      <div className="flex-1 flex flex-col">
-        <Navbar />
-        <main className="flex-1 p-4">{children}</main>
-      </div>
+    <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-950">
+      <Sidebar />
+      <main className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
+        {children}
+      </main>
     </div>
   );
 };

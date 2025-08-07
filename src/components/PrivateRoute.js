@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+// ✅ src/components/PrivateRoute.jsx
+import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../firebase"; // make sure you export `auth` from ../firebase
+import { auth } from "../firebase";
 
 const PrivateRoute = ({ children }) => {
   const [checking, setChecking] = useState(true);
@@ -12,14 +13,13 @@ const PrivateRoute = ({ children }) => {
       setUser(u);
       setChecking(false);
     });
-
     return () => unsub();
   }, []);
 
   if (checking) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-sm text-gray-500">Checking authentication...</div>
+      <div className="min-h-screen flex items-center justify-center text-gray-500 dark:text-gray-400">
+        Checking authentication...
       </div>
     );
   }
