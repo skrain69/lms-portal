@@ -105,13 +105,14 @@ const Directory = () => {
 
   const handleGoogleSheets = () => {
     alert("🔧 Google Sheets integration coming soon...");
-    // Add real Google Sheets API logic here
+    // Placeholder for Google Sheets API
   };
 
   if (!show) return null;
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 text-gray-900 dark:text-gray-100">
+      {/* Search Input */}
       <input
         type="text"
         placeholder="Search Wire Sign . . ."
@@ -120,36 +121,25 @@ const Directory = () => {
         className="mb-6 px-3 py-2 w-full max-w-md border rounded bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
       />
 
+      {/* Export Buttons */}
       <div className="flex flex-wrap gap-2 mb-4">
-        <button
-          onClick={handleCopy}
-          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent hover:bg-blue-100 dark:hover:bg-blue-900 transition text-sm"
-        >
-          📋 Copy
-        </button>
-
-        <button
-          onClick={handleExportPDF}
-          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent hover:bg-blue-100 dark:hover:bg-blue-900 transition text-sm"
-        >
-          🧾 PDF
-        </button>
-
-        <button
-          onClick={handleExportExcel}
-          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent hover:bg-blue-100 dark:hover:bg-blue-900 transition text-sm"
-        >
-          📊 Excel
-        </button>
-
-        <button
-          onClick={handleGoogleSheets}
-          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent hover:bg-blue-100 dark:hover:bg-blue-900 transition text-sm"
-        >
-          🔗 Google Sheets
-        </button>
+        {[
+          { label: "📋 Copy", onClick: handleCopy },
+          { label: "🧾 PDF", onClick: handleExportPDF },
+          { label: "📊 Excel", onClick: handleExportExcel },
+          { label: "🔗 Google Sheets", onClick: handleGoogleSheets },
+        ].map((btn, idx) => (
+          <button
+            key={idx}
+            onClick={btn.onClick}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent hover:bg-blue-100 dark:hover:bg-blue-900 transition text-sm"
+          >
+            {btn.label}
+          </button>
+        ))}
       </div>
 
+      {/* Responsive Table */}
       <div className="overflow-x-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-sm">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
           <thead className="bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300">
@@ -158,7 +148,7 @@ const Directory = () => {
                 <th
                   key={key}
                   onClick={() => handleSort(key)}
-                  className="px-4 py-3 text-left font-semibold cursor-pointer select-none hover:underline"
+                  className="px-4 py-3 text-left font-semibold cursor-pointer select-none hover:underline whitespace-nowrap"
                 >
                   {key.charAt(0).toUpperCase() + key.slice(1)}{" "}
                   {sortKey === key ? (sortOrder === "asc" ? "▲" : "▼") : ""}
@@ -174,15 +164,18 @@ const Directory = () => {
                   onClick={() => handleRowClick(user.id)}
                   className="hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
                 >
-                  <td className="px-4 py-3">{user.name}</td>
-                  <td className="px-4 py-3">{user.wireSign}</td>
-                  <td className="px-4 py-3">{user.email}</td>
-                  <td className="px-4 py-3">{user.contact}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">{user.name}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">{user.wireSign}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">{user.email}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">{user.contact}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="4" className="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
+                <td
+                  colSpan="4"
+                  className="px-4 py-6 text-center text-gray-500 dark:text-gray-400"
+                >
                   No matching users found.
                 </td>
               </tr>
