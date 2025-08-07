@@ -1,4 +1,3 @@
-// ✅ src/components/Sidebar.js
 import {
   Home,
   Settings,
@@ -40,25 +39,25 @@ const Sidebar = () => {
 
   return (
     <>
+      {/* Mobile Menu Button */}
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
-        className="fixed top-4 left-4 z-50 p-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-md sm:hidden"
+        className="fixed top-4 left-4 z-50 p-2 bg-white/80 dark:bg-gray-900/80 border border-gray-300 dark:border-gray-700 rounded-xl shadow-lg sm:hidden backdrop-blur-md"
         aria-label="Toggle Sidebar"
       >
         <Menu size={20} className="text-gray-800 dark:text-gray-100" />
       </button>
 
+      {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-40 h-full w-16 sm:w-16 flex flex-col justify-between bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transition-transform duration-300 ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full sm:translate-x-0"
-        }`}
+        className={`fixed top-0 left-0 z-40 h-full w-16 sm:w-16 flex flex-col justify-between 
+        bg-white/80 dark:bg-gray-900/80 backdrop-blur-md 
+        border-r border-gray-200 dark:border-gray-800 
+        transition-all duration-300 ease-in-out rounded-r-2xl shadow-lg
+        ${mobileOpen ? "translate-x-0" : "-translate-x-full sm:translate-x-0"}`}
       >
         <div className="flex flex-col items-center pt-6 gap-6">
-          <img
-            src="/logo-main.svg"
-            alt="Logo"
-            className="w-6 h-6"
-          />
+          <img src="/logo-main.svg" alt="Logo" className="w-7 h-7" />
 
           {links.map((link) => (
             <button
@@ -68,11 +67,11 @@ const Sidebar = () => {
                 navigate(link.path);
                 setMobileOpen(false);
               }}
-              className={`p-2 rounded-md hover:bg-blue-100 dark:hover:bg-gray-700 transition ${
-                isActive(link.path)
+              className={`p-2 rounded-xl transition-all text-sm font-medium
+                hover:bg-blue-100 dark:hover:bg-gray-700
+                ${isActive(link.path)
                   ? "bg-blue-100 text-blue-600 dark:bg-gray-800 dark:text-white"
-                  : "text-gray-500 dark:text-gray-400"
-              }`}
+                  : "text-gray-500 dark:text-gray-400"}`}
             >
               {link.icon}
             </button>
@@ -84,12 +83,12 @@ const Sidebar = () => {
             <img
               src={userData.photoURL}
               alt="Avatar"
-              className="h-8 w-8 rounded-full object-cover border border-gray-300 dark:border-gray-700"
+              className="h-9 w-9 rounded-full object-cover border border-gray-300 dark:border-gray-700"
             />
           ) : (
             <div
               title={userData?.name || "User"}
-              className="h-8 w-8 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center text-sm font-semibold text-white"
+              className="h-9 w-9 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center text-sm font-semibold text-white"
             >
               {userData?.name?.charAt(0).toUpperCase() || "U"}
             </div>
@@ -105,6 +104,7 @@ const Sidebar = () => {
         </div>
       </aside>
 
+      {/* Mobile Overlay */}
       {mobileOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-40 z-30 sm:hidden"
