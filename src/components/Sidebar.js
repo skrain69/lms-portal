@@ -8,9 +8,10 @@ import AvatarModal from "./AvatarModal";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const Sidebar = () => {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const navigate = useNavigate();
   const { currentUser, userData: authUserData, logout } = useAuth();
+
   const [userData, setUserData] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
@@ -60,11 +61,11 @@ const Sidebar = () => {
   const role = userData?.role || "Employee";
   const photoURL = userData?.photoURL || currentUser?.photoURL || null;
 
-  const navLink = (to, label, icon) => (
+  const navLink = (to, label, icon, match = pathname === to) => (
     <Link
       to={to}
       className={`flex items-center gap-3 px-4 py-2 rounded transition ${
-        pathname === to
+        match
           ? "bg-blue-200 dark:bg-blue-700 font-semibold text-blue-900 dark:text-white"
           : "text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-gray-700"
       } ${collapsed ? "justify-center" : ""}`}
@@ -129,22 +130,36 @@ const Sidebar = () => {
 
       {/* Navigation */}
       <nav className="space-y-2 flex-1">
-        {navLink("/reports", "Reports", "📁")}
-        {navLink("/activity", "Activity Log", "🕒")}
-      
-      <button
-  onClick={() => navigate("/?directory=true")}
-  className={`w-full flex items-center gap-3 px-4 py-2 rounded transition ${
-    pathname === "/" && window.location.search.includes("directory=true")
-      ? "bg-blue-200 dark:bg-blue-700 font-semibold text-blue-900 dark:text-white"
-      : "text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-gray-700"
-  } ${collapsed ? "justify-center" : ""}`}
-  title={collapsed ? "Directory" : ""}
->
-  <span>📇</span>
-  {!collapsed && <span>Directory</span>}
-</button>
+        {/* Dashboard */}
+        {navLink("/", "Dashboard", "📊", pathname === "/" && !search)}
 
+        {/* Directory */}
+        <button
+          onClick={() => navigate("/?directory=true")}
+          className={`w-full flex items-center gap-3 px-4 py-2 rounded transition ${
+            pathname === "/" && search.includes("directory=true")
+              ? "bg-blue-200 dark:bg-blue-700 font-semibold text-blue-900 dark:text-white"
+              : "text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-gray-700"
+          } ${collapsed ? "justify-center" : ""}`}
+          title={collapsed ? "Directory" : ""}
+        >
+          <span>📇</span>
+          {!collapsed && <span>Directory</span>}
+        </button>
+
+        {/* Calendar */}
+        <button
+          onClick={() => navigate("/?calendar=true")}
+          className={`w-full flex items-center gap-3 px-4 py-2 rounded transition ${
+            pathname === "/" && search.includes("calendar=true")
+              ? "bg-blue-200 dark:bg-blue-700 font-semibold text-blue-900 dark:text-white"
+              : "text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-gray-700"
+          } ${collapsed ? "justify-center" : ""}`}
+          title={collapsed ? "Calendar" : ""}
+        >
+          <span>📅</span>
+          {!collapsed && <span>Calendar</span>}
+        </button>
 
         {/* Settings */}
         <button
@@ -202,7 +217,7 @@ const Sidebar = () => {
         />
       )}
 
-      {/* Settings Modal (only in collapsed mode) */}
+      {/* Settings Modal (collapsed mode only) */}
       {collapsed && showSettingsModal && (
         <div className="fixed inset-0 z-40 bg-black/50 flex items-center justify-center">
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-6 w-[90%] max-w-sm text-sm">

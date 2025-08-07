@@ -1,4 +1,3 @@
-// src/pages/Dashboard.js
 import { useEffect, useState } from "react";
 import { auth, db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
@@ -7,6 +6,7 @@ import { useLocation } from "react-router-dom";
 
 import Layout from "../components/Layout";
 import TrafficChart from "../components/TrafficChart";
+import CalendarCard from "../components/CalendarCard";
 import Settings from "./Settings";
 import Directory from "./Directory";
 
@@ -17,6 +17,7 @@ const Dashboard = () => {
   const query = new URLSearchParams(location.search);
   const showSettings = query.get("settings") === "true";
   const showDirectory = query.get("directory") === "true";
+  const showCalendar = query.get("calendar") === "true";
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -40,7 +41,7 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      {!showSettings && !showDirectory && (
+      {!showSettings && !showDirectory && !showCalendar && (
         <p className="text-gray-600 dark:text-gray-300 mb-6">
           {userData
             ? `Welcome back, ${userData.name || userData.wireSign || "User"}.`
@@ -52,9 +53,12 @@ const Dashboard = () => {
         <Settings inline />
       ) : showDirectory ? (
         <Directory inline />
+      ) : showCalendar ? (
+        <CalendarCard />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <TrafficChart />
+          <CalendarCard />
         </div>
       )}
     </Layout>

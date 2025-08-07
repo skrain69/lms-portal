@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { useNavigate, useLocation } from "react-router-dom";
 import { db } from "../firebase";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 const Directory = () => {
   const navigate = useNavigate();
@@ -55,10 +58,7 @@ const Directory = () => {
   }, [searchTerm, sortKey, sortOrder]);
 
   const filteredUsers = users
-  .filter((user) =>
-    user.wireSign.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-
+    .filter((user) => user.wireSign.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => {
       const valA = a[sortKey].toLowerCase();
       const valB = b[sortKey].toLowerCase();
@@ -80,12 +80,38 @@ const Directory = () => {
     navigate(`/settings?uid=${userId}`);
   };
 
+  const handleCopy = () => {
+    const text = filteredUsers
+      .map((u) => `${u.name}\t${u.wireSign}\t${u.email}\t${u.contact}`)
+      .join("\n");
+    navigator.clipboard.writeText(text);
+  };
+
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    autoTable(doc, {
+      head: [["Name", "Wire Sign", "Email", "Contact"]],
+      body: filteredUsers.map((u) => [u.name, u.wireSign, u.email, u.contact]),
+    });
+    doc.save("directory.pdf");
+  };
+
+  const handleExportExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(filteredUsers);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Directory");
+    XLSX.writeFile(workbook, "directory.xlsx");
+  };
+
+  const handleGoogleSheets = () => {
+    alert("🔧 Google Sheets integration coming soon...");
+    // Add real Google Sheets API logic here
+  };
+
   if (!show) return null;
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 text-gray-900 dark:text-gray-100">
-    
-
       <input
         type="text"
         placeholder="Search Wire Sign . . ."
@@ -93,6 +119,36 @@ const Directory = () => {
         onChange={(e) => setSearchTerm(e.target.value)}
         className="mb-6 px-3 py-2 w-full max-w-md border rounded bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
       />
+
+      <div className="flex flex-wrap gap-2 mb-4">
+        <button
+          onClick={handleCopy}
+          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent hover:bg-blue-100 dark:hover:bg-blue-900 transition text-sm"
+        >
+          📋 Copy
+        </button>
+
+        <button
+          onClick={handleExportPDF}
+          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent hover:bg-blue-100 dark:hover:bg-blue-900 transition text-sm"
+        >
+          🧾 PDF
+        </button>
+
+        <button
+          onClick={handleExportExcel}
+          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent hover:bg-blue-100 dark:hover:bg-blue-900 transition text-sm"
+        >
+          📊 Excel
+        </button>
+
+        <button
+          onClick={handleGoogleSheets}
+          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent hover:bg-blue-100 dark:hover:bg-blue-900 transition text-sm"
+        >
+          🔗 Google Sheets
+        </button>
+      </div>
 
       <div className="overflow-x-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-sm">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
@@ -104,7 +160,8 @@ const Directory = () => {
                   onClick={() => handleSort(key)}
                   className="px-4 py-3 text-left font-semibold cursor-pointer select-none hover:underline"
                 >
-                  {key.charAt(0).toUpperCase() + key.slice(1)} {sortKey === key ? (sortOrder === "asc" ? "▲" : "▼") : ""}
+                  {key.charAt(0).toUpperCase() + key.slice(1)}{" "}
+                  {sortKey === key ? (sortOrder === "asc" ? "▲" : "▼") : ""}
                 </th>
               ))}
             </tr>
