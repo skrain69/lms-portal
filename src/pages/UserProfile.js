@@ -4,41 +4,37 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import Layout from "../components/Layout";
 
-const Profile = () => {
+const UserProfile = () => {
   const { uid } = useParams();
   const navigate = useNavigate();
-
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUser = async () => {
       if (!uid) return;
-
       try {
         const ref = doc(db, "users", uid);
         const snap = await getDoc(ref);
-
         if (snap.exists()) {
           setUser({ id: uid, ...snap.data() });
         } else {
-          navigate("/404");
+          navigate("/?directory=true");
         }
       } catch (err) {
-        console.error("Error loading user profile:", err);
-        navigate("/404");
+        console.error("Failed to fetch user profile", err);
+        navigate("/?directory=true");
       } finally {
         setLoading(false);
       }
     };
-
     fetchUser();
   }, [uid, navigate]);
 
   if (loading) {
     return (
       <Layout>
-        <div className="text-center py-10 text-gray-400 dark:text-gray-500">
+        <div className="text-center py-10 text-gray-500 dark:text-gray-400">
           Loading profile...
         </div>
       </Layout>
@@ -98,4 +94,4 @@ const Profile = () => {
   );
 };
 
-export default Profile;
+export default UserProfile;

@@ -4,9 +4,10 @@ import {
   Users,
   LogOut,
   Menu,
+  X as CloseIcon,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 
 const Sidebar = () => {
@@ -14,6 +15,8 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [logoClicked, setLogoClicked] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false); // 🆕 Modal state
 
   const links = [
     { label: "Dashboard", icon: <Home size={20} />, path: "/" },
@@ -37,6 +40,17 @@ const Sidebar = () => {
     return location.pathname === path || url.toString() === path.split("?")[1];
   };
 
+  const handleLogoClick = () => {
+    setLogoClicked(true);
+  };
+
+  useEffect(() => {
+    if (logoClicked) {
+      const timer = setTimeout(() => setLogoClicked(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [logoClicked]);
+
   return (
     <>
       {/* Mobile Menu Button */}
@@ -57,8 +71,17 @@ const Sidebar = () => {
         ${mobileOpen ? "translate-x-0" : "-translate-x-full sm:translate-x-0"}`}
       >
         <div className="flex flex-col items-center pt-6 gap-6">
-          <img src="/logo-main.svg" alt="Logo" className="w-7 h-7" />
+          {/* Clickable logo */}
+          <img
+            src="/logo-main.svg"
+            alt="Logo"
+            onClick={handleLogoClick}
+            className={`w-7 h-7 cursor-pointer transition-transform duration-300 ${
+              logoClicked ? "scale-150" : "scale-100"
+            }`}
+          />
 
+          {/* Navigation Links */}
           {links.map((link) => (
             <button
               key={link.label}
@@ -78,12 +101,15 @@ const Sidebar = () => {
           ))}
         </div>
 
+        {/* Avatar + Logout */}
         <div className="flex flex-col items-center pb-6 gap-4">
           {userData?.photoURL ? (
             <img
               src={userData.photoURL}
               alt="Avatar"
-              className="h-9 w-9 rounded-full object-cover border border-gray-300 dark:border-gray-700"
+              title="Click to enlarge"
+              onClick={() => setModalOpen(true)}
+              className="h-9 w-9 rounded-full object-cover border border-gray-300 dark:border-gray-700 cursor-pointer hover:scale-110 transition"
             />
           ) : (
             <div
@@ -110,6 +136,30 @@ const Sidebar = () => {
           className="fixed inset-0 bg-black bg-opacity-40 z-30 sm:hidden"
           onClick={() => setMobileOpen(false)}
         />
+      )}
+
+      {/* ✅ Avatar Modal */}
+      {modalOpen && userData?.photoURL && (
+        <div
+          className="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center px-4"
+          onClick={() => setModalOpen(false)}
+        >
+          <div className="relative max-w-full max-h-full">
+            <button
+              onClick={() => setModalOpen(false)}
+              className="absolute top-2 right-2 bg-white dark:bg-gray-800 p-1 rounded-full shadow-lg"
+              aria-label="Close"
+            >
+              <CloseIcon size={18} />
+            </button>
+            <img
+              src={userData.photoURL}
+              alt="Full Size Avatar"
+              className="max-w-[90vw] max-h-[90vh] rounded-lg shadow-lg border border-white dark:border-gray-800"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
       )}
     </>
   );

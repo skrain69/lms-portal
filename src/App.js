@@ -1,4 +1,3 @@
-// src/App.js
 import { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
@@ -6,7 +5,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
-import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 import PrivateRoute from "./components/PrivateRoute";
@@ -15,7 +14,6 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const App = () => {
-  // Prevent back navigation after logout (BFCache)
   useEffect(() => {
     const onPageShow = (e) => {
       if (e.persisted || performance.getEntriesByType("navigation")[0]?.type === "back_forward") {
@@ -46,10 +44,10 @@ const App = () => {
               }
             />
             <Route
-              path="/profile"
+              path="/profile/:uid"
               element={
                 <PrivateRoute>
-                  <Profile />
+                  <Settings />
                 </PrivateRoute>
               }
             />

@@ -19,7 +19,7 @@ const PrivateRoute = ({ children }) => {
   if (checking) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500 dark:text-gray-400">
-        Checking authentication...
+        Loading . . .
       </div>
     );
   }

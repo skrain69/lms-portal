@@ -16,22 +16,21 @@ const Directory = () => {
   const [sortKey, setSortKey] = useState(localStorage.getItem("directorySortKey") || "name");
   const [sortOrder, setSortOrder] = useState(localStorage.getItem("directorySortOrder") || "asc");
 
+  // Fetch users
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "users"));
+        const snapshot = await getDocs(collection(db, "users"));
         const validUsers = [];
 
-        querySnapshot.forEach((doc) => {
+        snapshot.forEach((doc) => {
           const data = doc.data();
-          if (
+          const isValid =
             data.name &&
-            data.wireSign &&
-            data.email &&
-            data.contact &&
-            /^[A-Za-z]{2}$/.test(data.wireSign) &&
-            (data.contact.match(/\d/g) || []).length >= 11
-          ) {
+            /^[A-Za-z]{2}$/.test(data.wireSign || "") &&
+            (data.contact?.match(/\d/g) || []).length >= 11;
+
+          if (isValid) {
             validUsers.push({
               id: doc.id,
               name: data.name,
@@ -51,22 +50,27 @@ const Directory = () => {
     fetchUsers();
   }, []);
 
+  // Save search/sort to localStorage
   useEffect(() => {
     localStorage.setItem("directorySearch", searchTerm);
     localStorage.setItem("directorySortKey", sortKey);
     localStorage.setItem("directorySortOrder", sortOrder);
   }, [searchTerm, sortKey, sortOrder]);
 
+  // Sort & filter
   const filteredUsers = users
-    .filter((user) => user.wireSign.toLowerCase().includes(searchTerm.toLowerCase()))
+    .filter((user) =>
+      user.wireSign.toLowerCase().includes(searchTerm.toLowerCase())
+    )
     .sort((a, b) => {
       const valA = a[sortKey].toLowerCase();
       const valB = b[sortKey].toLowerCase();
-      if (valA < valB) return sortOrder === "asc" ? -1 : 1;
-      if (valA > valB) return sortOrder === "asc" ? 1 : -1;
-      return 0;
+      return sortOrder === "asc"
+        ? valA.localeCompare(valB)
+        : valB.localeCompare(valA);
     });
 
+  // Sorting toggle
   const handleSort = (key) => {
     if (sortKey === key) {
       setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -76,10 +80,13 @@ const Directory = () => {
     }
   };
 
-  const handleRowClick = (userId) => {
-    navigate(`/settings?uid=${userId}`);
-  };
+  // Go to profile page
+ const handleRowClick = (userId) => {
+  navigate(`/profile/${userId}`);
+};
 
+
+  // Export features
   const handleCopy = () => {
     const text = filteredUsers
       .map((u) => `${u.name}\t${u.wireSign}\t${u.email}\t${u.contact}`)
@@ -103,16 +110,12 @@ const Directory = () => {
     XLSX.writeFile(workbook, "directory.xlsx");
   };
 
-  const handleGoogleSheets = () => {
-    alert("🔧 Google Sheets integration coming soon...");
-    // Placeholder for Google Sheets API
-  };
-
+  // Render nothing if not in directory mode
   if (!show) return null;
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 text-gray-900 dark:text-gray-100">
-      {/* Search Input */}
+      {/* Search */}
       <input
         type="text"
         placeholder="Search Wire Sign . . ."
@@ -127,7 +130,6 @@ const Directory = () => {
           { label: "📋 Copy", onClick: handleCopy },
           { label: "🧾 PDF", onClick: handleExportPDF },
           { label: "📊 Excel", onClick: handleExportExcel },
-          { label: "🔗 Google Sheets", onClick: handleGoogleSheets },
         ].map((btn, idx) => (
           <button
             key={idx}
@@ -139,7 +141,7 @@ const Directory = () => {
         ))}
       </div>
 
-      {/* Responsive Table */}
+      {/* User Table */}
       <div className="overflow-x-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-sm">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
           <thead className="bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300">

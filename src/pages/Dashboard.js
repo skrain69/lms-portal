@@ -1,17 +1,18 @@
 import { useLocation } from "react-router-dom";
-
 import Layout from "../components/Layout";
 import Settings from "./Settings";
 import Directory from "./Directory";
 
 const Dashboard = () => {
   const location = useLocation();
-
   const query = new URLSearchParams(location.search);
-  const showSettings = query.get("settings") === "true";
+
+  const showSettings = query.get("settings") === "true" || query.get("uid") !== null;
   const showDirectory = query.get("directory") === "true";
 
-  const currentPage = showSettings
+  const currentPage = query.get("uid")
+    ? "User Profile"
+    : showSettings
     ? "Settings"
     : showDirectory
     ? "Directory"
@@ -32,20 +33,15 @@ const Dashboard = () => {
               </span>
             </li>
             <li>/</li>
-            <li className="font-medium text-gray-700 dark:text-gray-200">{currentPage}</li>
+            <li className="font-medium text-gray-700 dark:text-gray-200">
+              {currentPage}
+            </li>
           </ol>
         </nav>
 
         {/* Page Content */}
-        {showSettings ? (
-          <div className="w-full">
-            <Settings inline />
-          </div>
-        ) : showDirectory ? (
-          <div className="w-full">
-            <Directory inline />
-          </div>
-        ) : null}
+        {showSettings && <Settings inline />}
+        {showDirectory && <Directory inline />}
       </div>
     </Layout>
   );

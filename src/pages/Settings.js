@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
-// Notification Component
+// ✅ Notification component
 const InlineNotif = ({ notif, onClose }) => {
   if (!notif.visible) return null;
 
-  const base = "mb-4 p-3 rounded text-sm flex items-start justify-between gap-3 transition-all";
+  const base =
+    "mb-4 p-3 rounded text-sm flex items-start justify-between gap-3 transition-all";
   const style =
     notif.type === "success"
       ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
@@ -29,6 +31,9 @@ const InlineNotif = ({ notif, onClose }) => {
 
 const Settings = () => {
   const { currentUser, refreshUserData } = useAuth();
+ const { uid: uidFromURL } = useParams();
+
+
 
   const [form, setForm] = useState({
     name: "",
@@ -47,20 +52,23 @@ const Settings = () => {
     message: "",
   });
 
+  const isReadOnly = uidFromURL && uidFromURL !== currentUser?.uid;
+
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!currentUser) return;
+      const uid = uidFromURL || currentUser?.uid;
+      if (!uid) return;
 
       setLoading(true);
       try {
-        const ref = doc(db, "users", currentUser.uid);
+        const ref = doc(db, "users", uid);
         const snap = await getDoc(ref);
 
         if (snap.exists()) {
           const data = snap.data();
           setForm({
             name: data.name || "",
-            email: data.email || currentUser.email || "",
+            email: data.email || "",
             role: data.role || "",
             wireSign: data.wireSign || "",
             contact: data.contact || "",
@@ -71,7 +79,7 @@ const Settings = () => {
         setNotif({
           visible: true,
           type: "error",
-          message: "Failed to load settings.",
+          message: "Failed to load user data.",
         });
       } finally {
         setLoading(false);
@@ -79,7 +87,7 @@ const Settings = () => {
     };
 
     fetchUserData();
-  }, [currentUser]);
+  }, [uidFromURL, currentUser]);
 
   useEffect(() => {
     if (!notif.visible) return;
@@ -140,19 +148,6 @@ const Settings = () => {
         type: "success",
         message: "Settings updated successfully.",
       });
-
-      // ✅ Immediately reset the form after saving
-      setForm({
-        name: "",
-        email: "",
-        role: "",
-        wireSign: "",
-        contact: "",
-        photoURL: "",
-      });
-
-      // ✅ Optionally reload the page after 1 second
-      setTimeout(() => window.location.reload(), 1000);
     } catch {
       setNotif({
         visible: true,
@@ -173,26 +168,17 @@ const Settings = () => {
           onSubmit={handleSave}
           className="bg-white dark:bg-gray-800 p-6 rounded shadow-sm"
         >
-          <h1 className="text-xl font-semibold mb-6">User Settings</h1>
+          <h1 className="text-xl font-semibold mb-6">
+            {isReadOnly ? "User Profile" : "User Settings"}
+          </h1>
 
-          {/* Editable Fields */}
+          {/* Editable or readonly fields */}
           {[
-            { label: "Name", name: "name", type: "text", required: true },
-            {
-              label: "Wire Sign",
-              name: "wireSign",
-              type: "text",
-              required: true,
-              maxLength: 2,
-            },
-            {
-              label: "Contact Number",
-              name: "contact",
-              type: "tel",
-              required: true,
-            },
+            { label: "Name", name: "name" },
+            { label: "Wire Sign", name: "wireSign", maxLength: 2 },
+            { label: "Contact Number", name: "contact" },
             { label: "Photo URL", name: "photoURL", type: "url" },
-          ].map(({ label, name, type, required, maxLength }) => (
+          ].map(({ label, name, type = "text", maxLength }) => (
             <div className="mb-4" key={name}>
               <label className="block text-sm font-medium mb-1">{label}</label>
               <input
@@ -200,44 +186,47 @@ const Settings = () => {
                 name={name}
                 value={form[name]}
                 onChange={handleChange}
-                required={required}
+                required={name !== "photoURL"}
                 maxLength={maxLength}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                readOnly={isReadOnly}
+                className={`w-full p-2 border rounded ${
+                  isReadOnly
+                    ? "bg-gray-100 dark:bg-gray-700 text-gray-500 cursor-not-allowed"
+                    : "bg-white dark:bg-gray-900"
+                } border-gray-300 dark:border-gray-700 focus:outline-none ${
+                  !isReadOnly && "focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                }`}
               />
             </div>
           ))}
 
-          {/* Read-only Fields */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Email (read-only)</label>
-            <input
-              type="email"
-              value={form.email}
-              disabled
-              className="w-full p-2 border rounded bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400"
-            />
-          </div>
+          {/* Read-only fields */}
+          {["email", "role"].map((field) => (
+            <div className="mb-4" key={field}>
+              <label className="block text-sm font-medium mb-1">
+                {field === "email" ? "Email (read-only)" : "Role (read-only)"}
+              </label>
+              <input
+                type="text"
+                value={form[field]}
+                disabled
+                className="w-full p-2 border rounded bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400"
+              />
+            </div>
+          ))}
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Role (read-only)</label>
-            <input
-              type="text"
-              value={form.role}
-              disabled
-              className="w-full p-2 border rounded bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400"
-            />
-          </div>
-
-          {/* Submit Button */}
-          <div className="flex gap-3">
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded disabled:opacity-50 transition"
-            >
-              {saving ? "Saving..." : "Save Changes"}
-            </button>
-          </div>
+          {/* Save button only if editing own profile */}
+          {!isReadOnly && (
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                disabled={saving}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded disabled:opacity-50 transition"
+              >
+                {saving ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          )}
 
           {/* Notification */}
           <div className="mt-4">
