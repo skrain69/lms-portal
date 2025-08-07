@@ -3,12 +3,11 @@ import { useAuth } from "../contexts/AuthContext";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
-// Notification Banner
+// Notification Component
 const InlineNotif = ({ notif, onClose }) => {
   if (!notif.visible) return null;
 
-  const base =
-    "mb-4 p-3 rounded text-sm flex items-start justify-between gap-3 transition-all";
+  const base = "mb-4 p-3 rounded text-sm flex items-start justify-between gap-3 transition-all";
   const style =
     notif.type === "success"
       ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
@@ -133,7 +132,7 @@ const Settings = () => {
       });
 
       if (typeof refreshUserData === "function") {
-        await refreshUserData(); // ✅ Refresh auth context
+        await refreshUserData();
       }
 
       setNotif({
@@ -142,7 +141,18 @@ const Settings = () => {
         message: "Settings updated successfully.",
       });
 
-      setTimeout(() => window.location.reload(), 1000); // ✅ Update Navbar/avatar/etc
+      // ✅ Immediately reset the form after saving
+      setForm({
+        name: "",
+        email: "",
+        role: "",
+        wireSign: "",
+        contact: "",
+        photoURL: "",
+      });
+
+      // ✅ Optionally reload the page after 1 second
+      setTimeout(() => window.location.reload(), 1000);
     } catch {
       setNotif({
         visible: true,
@@ -165,7 +175,7 @@ const Settings = () => {
         >
           <h1 className="text-xl font-semibold mb-6">User Settings</h1>
 
-          {/* Editable fields */}
+          {/* Editable Fields */}
           {[
             { label: "Name", name: "name", type: "text", required: true },
             {
@@ -197,7 +207,7 @@ const Settings = () => {
             </div>
           ))}
 
-          {/* Read-only fields */}
+          {/* Read-only Fields */}
           <div className="mb-4">
             <label className="block text-sm font-medium mb-1">Email (read-only)</label>
             <input

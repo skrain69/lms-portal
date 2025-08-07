@@ -1,3 +1,4 @@
+// ...imports remain the same
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
@@ -121,9 +122,7 @@ const Sidebar = () => {
             <div className="mt-2 text-sm font-medium text-gray-800 dark:text-gray-100 text-center">
               {displayName}
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              {role}
-            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">{role}</div>
           </>
         )}
       </div>
@@ -145,20 +144,6 @@ const Sidebar = () => {
         >
           <span>📇</span>
           {!collapsed && <span>Directory</span>}
-        </button>
-
-        {/* Calendar */}
-        <button
-          onClick={() => navigate("/?calendar=true")}
-          className={`w-full flex items-center gap-3 px-4 py-2 rounded transition ${
-            pathname === "/" && search.includes("calendar=true")
-              ? "bg-blue-200 dark:bg-blue-700 font-semibold text-blue-900 dark:text-white"
-              : "text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-gray-700"
-          } ${collapsed ? "justify-center" : ""}`}
-          title={collapsed ? "Calendar" : ""}
-        >
-          <span>📅</span>
-          {!collapsed && <span>Calendar</span>}
         </button>
 
         {/* Settings */}
@@ -217,7 +202,7 @@ const Sidebar = () => {
         />
       )}
 
-      {/* Settings Modal (collapsed mode only) */}
+      {/* Settings Modal (collapsed only) */}
       {collapsed && showSettingsModal && (
         <div className="fixed inset-0 z-40 bg-black/50 flex items-center justify-center">
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-6 w-[90%] max-w-sm text-sm">

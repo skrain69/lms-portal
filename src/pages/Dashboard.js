@@ -5,8 +5,6 @@ import { onAuthStateChanged } from "firebase/auth";
 import { useLocation } from "react-router-dom";
 
 import Layout from "../components/Layout";
-import TrafficChart from "../components/TrafficChart";
-import CalendarCard from "../components/CalendarCard";
 import Settings from "./Settings";
 import Directory from "./Directory";
 
@@ -17,7 +15,6 @@ const Dashboard = () => {
   const query = new URLSearchParams(location.search);
   const showSettings = query.get("settings") === "true";
   const showDirectory = query.get("directory") === "true";
-  const showCalendar = query.get("calendar") === "true";
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -32,7 +29,7 @@ const Dashboard = () => {
           console.error("Error fetching user profile:", err);
         }
       } else {
-        setUserData(null); // ✅ Clear state on logout
+        setUserData(null);
       }
     });
 
@@ -41,26 +38,25 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      {!showSettings && !showDirectory && !showCalendar && (
-        <p className="text-gray-600 dark:text-gray-300 mb-6">
-          {userData
-            ? `Welcome back, ${userData.name || userData.wireSign || "User"}.`
-            : "Here's what's happening today."}
-        </p>
-      )}
+      <div className="p-4 sm:p-6 md:p-8 max-w-screen-lg mx-auto w-full">
+        {!showSettings && !showDirectory && (
+          <p className="text-gray-700 dark:text-gray-300 text-base sm:text-lg md:text-xl mb-6 sm:mb-8">
+            {userData
+              ? `Welcome back, ${userData.name || userData.wireSign || "User"}.`
+              : "Here's what's happening today."}
+          </p>
+        )}
 
-      {showSettings ? (
-        <Settings inline />
-      ) : showDirectory ? (
-        <Directory inline />
-      ) : showCalendar ? (
-        <CalendarCard />
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <TrafficChart />
-          <CalendarCard />
-        </div>
-      )}
+        {showSettings ? (
+          <div className="w-full">
+            <Settings inline />
+          </div>
+        ) : showDirectory ? (
+          <div className="w-full">
+            <Directory inline />
+          </div>
+        ) : null}
+      </div>
     </Layout>
   );
 };
